@@ -27,4 +27,4 @@ ENV PROXY_PORT="1337"
 ENV HCC_ENV_URL="https://console.stage.redhat.com"
 ENV ROUTES_JSON_PATH="/config/routes.json"
 
-ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/entrypoint.sh"]
