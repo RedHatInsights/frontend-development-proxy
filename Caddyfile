@@ -6,10 +6,9 @@
 }
 
 {$HCC_ENV}.foo.redhat.com:{$PROXY_PORT} {
-	log {
+	log default {
 		output stdout
-		format console
-		level DEBUG
+		format transform "{common_log}"
 	}
 
 	@html_fallback {
