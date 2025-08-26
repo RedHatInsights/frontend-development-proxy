@@ -1,5 +1,5 @@
 # Build customized Caddy binary with cache, transform-encoder and a custom 'rh_identity_transform' plugin.
-FROM caddy:2.10.0-builder AS builder
+FROM caddy:2.10.2-builder AS builder
 
 COPY rh_identity_transform .
 
@@ -8,7 +8,7 @@ RUN xcaddy build \
   --with github.com/caddyserver/transform-encoder \
   --with rh_identity_transform=$(pwd)
 
-FROM caddy:2.10.0
+FROM caddy:2.10.2
 
 COPY --from=builder /usr/bin/caddy /usr/bin/caddy
 
