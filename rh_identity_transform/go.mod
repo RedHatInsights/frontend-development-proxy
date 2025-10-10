@@ -6,7 +6,7 @@ toolchain go1.25.4
 
 require (
 	github.com/caddyserver/caddy/v2 v2.9.1
-	github.com/golang-jwt/jwt/v5 v5.2.2
+	github.com/golang-jwt/jwt/v5 v5.3.0
 )
 
 require (
