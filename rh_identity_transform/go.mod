@@ -89,7 +89,7 @@ require (
 	go.etcd.io/bbolt v1.3.9 // indirect
 	go.step.sm/cli-utils v0.9.0 // indirect
 	go.step.sm/crypto v0.74.0 // indirect
-	go.step.sm/linkedca v0.20.1 // indirect
+	go.step.sm/linkedca v0.25.0 // indirect
 	go.uber.org/automaxprocs v1.6.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect
