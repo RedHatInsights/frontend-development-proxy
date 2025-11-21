@@ -87,7 +87,7 @@ require (
 	github.com/urfave/cli v1.22.17 // indirect
 	github.com/zeebo/blake3 v0.2.4 // indirect
 	go.etcd.io/bbolt v1.3.9 // indirect
-	go.step.sm/cli-utils v0.9.0 // indirect
+	go.step.sm/cli-utils v0.12.2 // indirect
 	go.step.sm/crypto v0.74.0 // indirect
 	go.step.sm/linkedca v0.20.1 // indirect
 	go.uber.org/automaxprocs v1.6.0 // indirect
