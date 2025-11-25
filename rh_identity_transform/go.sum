@@ -76,8 +76,8 @@ github.com/caddyserver/certmagic v0.24.0 h1:EfXTWpxHAUKgDfOj6MHImJN8Jm4AMFfMT6IT
 github.com/caddyserver/certmagic v0.24.0/go.mod h1:xPT7dC1DuHHnS2yuEQCEyks+b89sUkMENh8dJF+InLE=
 github.com/caddyserver/zerossl v0.1.3 h1:onS+pxp3M8HnHpN5MMbOMyNjmTheJyWRaZYwn+YTAyA=
 github.com/caddyserver/zerossl v0.1.3/go.mod h1:CxA0acn7oEGO6//4rtrRjYgEoa4MFw/XofZnrYwGqG4=
-github.com/ccoveille/go-safecast v1.6.1 h1:Nb9WMDR8PqhnKCVs2sCB+OqhohwO5qaXtCviZkIff5Q=
-github.com/ccoveille/go-safecast v1.6.1/go.mod h1:QqwNjxQ7DAqY0C721OIO9InMk9zCwcsO7tnRuHytad8=
+github.com/ccoveille/go-safecast v1.8.2 h1:+d+s5UGQiCVJX9oYc8XvYcB2zCMBlax6lIP7YdxXLHA=
+github.com/ccoveille/go-safecast v1.8.2/go.mod h1:M0Ubpl11x63fE7iOfk5MtngQFXsntcRzOoSsFDqQYDY=
 github.com/cespare/xxhash v1.1.0 h1:a6HrQnmkObjyL+Gs60czilIUGqrzKutQD6XZog3p+ko=
 github.com/cespare/xxhash v1.1.0/go.mod h1:XrSqR1VqqWfGrhpAt58auRo0WTKS1nRRg3ghfAqPWnc=
 github.com/cespare/xxhash/v2 v2.3.0 h1:UL815xU9SqsFlibzuggzjXhog7bL6oX9BbNZnL2UFvs=
