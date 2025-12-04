@@ -272,8 +272,8 @@ github.com/smallstep/cli-utils v0.12.1 h1:D9QvfbFqiKq3snGZ2xDcXEFrdFJ1mQfPHZMq/l
 github.com/smallstep/cli-utils v0.12.1/go.mod h1:skV2Neg8qjiKPu2fphM89H9bIxNpKiiRTnX9Q6Lc+20=
 github.com/smallstep/go-attestation v0.4.4-0.20241119153605-2306d5b464ca h1:VX8L0r8vybH0bPeaIxh4NQzafKQiqvlOn8pmOXbFLO4=
 github.com/smallstep/go-attestation v0.4.4-0.20241119153605-2306d5b464ca/go.mod h1:vNAduivU014fubg6ewygkAvQC0IQVXqdc8vaGl/0er4=
-github.com/smallstep/linkedca v0.23.0 h1:5W/7EudlK1HcCIdZM68dJlZ7orqCCCyv6bm2l/0JmLU=
-github.com/smallstep/linkedca v0.23.0/go.mod h1:7cyRM9soAYySg9ag65QwytcgGOM+4gOlkJ/YA58A9E8=
+github.com/smallstep/linkedca v0.25.0 h1:txT9QHGbCsJq0MhAghBq7qhurGY727tQuqUi+n4BVBo=
+github.com/smallstep/linkedca v0.25.0/go.mod h1:Q3jVAauFKNlF86W5/RFtgQeyDKz98GL/KN3KG4mJOvc=
 github.com/smallstep/nosql v0.7.0 h1:YiWC9ZAHcrLCrayfaF+QJUv16I2bZ7KdLC3RpJcnAnE=
 github.com/smallstep/nosql v0.7.0/go.mod h1:H5VnKMCbeq9QA6SRY5iqPylfxLfYcLwvUff3onQ8+HU=
 github.com/smallstep/pkcs7 v0.2.1 h1:6Kfzr/QizdIuB6LSv8y1LJdZ3aPSfTNhTLqAx9CTLfA=
