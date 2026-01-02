@@ -79,7 +79,6 @@ require (
 	github.com/prometheus/procfs v0.19.2 // indirect
 	github.com/quic-go/qpack v0.5.1 // indirect
 	github.com/quic-go/quic-go v0.56.0 // indirect
-	github.com/rogpeppe/go-internal v1.14.1 // indirect
 	github.com/rs/xid v1.6.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/shopspring/decimal v1.4.0 // indirect
@@ -87,7 +86,7 @@ require (
 	github.com/slackhq/nebula v1.9.7 // indirect
 	github.com/smallstep/certificates v0.28.4 // indirect
 	github.com/smallstep/cli-utils v0.12.1 // indirect
-	github.com/smallstep/linkedca v0.23.0 // indirect
+	github.com/smallstep/linkedca v0.25.0 // indirect
 	github.com/smallstep/nosql v0.7.0 // indirect
 	github.com/smallstep/pkcs7 v0.2.1 // indirect
 	github.com/smallstep/scep v0.0.0-20250318231241-a25cabb69492 // indirect
