@@ -126,3 +126,26 @@ sudo podman run -d
   --network=host
   frontend-development-proxy quay.io/redhat-user-workloads/hcc-platex-services-tenant/frontend-development-proxy:latest
 ```
+
+### Proxying Multiple URLs (Custom Routes)
+
+You can route specific API paths to your local machine (or other targets) while letting the rest of the application use the default environment.
+
+1.  **Create a config file** (e.g., `my-routes.json`):
+    ```json
+    {
+        "/api/inventory": {
+            "url": "[http://host.docker.internal:8000](http://host.docker.internal:8000)",
+            "rh-identity-headers": true
+        }
+    }
+    ```
+    *Note: Use `host.docker.internal` to reach services running on your host machine.*
+
+2.  **Run the proxy with the file mounted:**
+    ```bash
+    podman run -it --rm \
+      -p 1337:1337 \
+      -v $(pwd)/my-routes.json:/config/custom_routes.json:Z \
+      quay.io/redhat-services/frontend-development-proxy:latest
+    ```
