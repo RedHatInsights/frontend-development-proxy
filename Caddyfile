@@ -1,14 +1,13 @@
 {
 	order rewrite before reverse_proxy
 	order rh_identity_transform before respond
-	cache
 	admin off
 }
 
 {$HCC_ENV}.foo.redhat.com:{$PROXY_PORT} {
 	log default {
 		output stdout
-		format transform "{common_log}"
+		format console
 	}
 
 	@html_fallback {
@@ -19,11 +18,15 @@
 	{$LOCAL_ROUTES}
 
 	handle {
-		cache
-		reverse_proxy {$HCC_ENV_URL} {
-			header_up Host {http.reverse_proxy.upstream.hostport}
-			header_up Accept-Encoding "gzip;q=0,deflate,sdch"
-			header_up -Origin
+		route {
+			feo_interceptor {
+				crd_path /config/deploy/frontend.yaml
+			}
+			reverse_proxy {$HCC_ENV_URL} {
+				header_up Host {http.reverse_proxy.upstream.hostport}
+				header_up Accept-Encoding "gzip;q=0,deflate,sdch"
+				header_up -Origin
+			}
 		}
 	}
 
