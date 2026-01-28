@@ -7,6 +7,23 @@ MAIN_ROUTES="$ROUTES_JSON_PATH"
 # Defaults to a specific path, but can be overridden by env var
 CUSTOM_ROUTES="${LOCAL_CUSTOM_ROUTES_PATH:-/config/custom_routes.json}"
 
+# FEO INTERCEPTOR CONFIGURATION
+# Enable/disable FEO interceptor via environment variable
+# Default: enabled (true)
+ENABLE_FEO="${ENABLE_FEO:-true}"
+FEO_CRD_PATH="${FEO_CRD_PATH:-config/deploy/frontend.yaml}"
+
+if [ "$ENABLE_FEO" = "true" ]; then
+  echo ">>> FEO Interceptor ENABLED"
+  if [ -f "$FEO_CRD_PATH" ]; then
+    echo ">>> FEO CRD found at: $FEO_CRD_PATH"
+  else
+    echo ">>> WARNING: FEO CRD not found at: $FEO_CRD_PATH"
+  fi
+else
+  echo ">>> FEO Interceptor DISABLED"
+fi
+
 # MERGE CONFIGURATION
 # Determine which config files exist and merge accordingly
 if [ -f "$MAIN_ROUTES" ] && [ -f "$CUSTOM_ROUTES" ]; then

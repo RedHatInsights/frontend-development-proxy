@@ -1,4 +1,1 @@
-{
-  "/apps/NAME-OF-YOUR-APP*": { "url": "http://host.docker.internal:8003" },
-  "/api/NAME-OF-YOUR-APP/*": { "url": "http://host.docker.internal:8000" }
-}
+{}

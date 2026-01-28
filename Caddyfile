@@ -1,14 +1,15 @@
 {
+	order feo_interceptor before reverse_proxy
 	order rewrite before reverse_proxy
 	order rh_identity_transform before respond
-	cache
 	admin off
+	auto_https off
 }
 
-{$HCC_ENV}.foo.redhat.com:{$PROXY_PORT} {
+http://{$HCC_ENV}.foo.redhat.com:{$PROXY_PORT}, http://localhost:{$PROXY_PORT} {
 	log default {
 		output stdout
-		format transform "{common_log}"
+		format console
 	}
 
 	@html_fallback {
@@ -19,15 +20,21 @@
 	{$LOCAL_ROUTES}
 
 	handle {
-		cache
-		reverse_proxy {$HCC_ENV_URL} {
-			header_up Host {http.reverse_proxy.upstream.hostport}
-			header_up Accept-Encoding "gzip;q=0,deflate,sdch"
-			header_up -Origin
+		route {
+			feo_interceptor {
+				crd_path config/deploy/frontend.yaml
+			}
+			reverse_proxy {$HCC_ENV_URL} {
+				header_up Host {http.reverse_proxy.upstream.hostport}
+				header_up Accept-Encoding "gzip;q=0,deflate,sdch"
+				header_up -Origin
+			}
 		}
 	}
 
-	tls internal {
-		on_demand
-	}
+	# For testing: comment out TLS to allow HTTP
+	# Uncomment for production use
+	# tls internal {
+	# 	on_demand
+	# }
 }
