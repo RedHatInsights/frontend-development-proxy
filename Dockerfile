@@ -1,12 +1,23 @@
-# Build customized Caddy binary with cache, transform-encoder and a custom 'rh_identity_transform' plugin.
-FROM caddy:2.10.2-builder AS builder
+# Build customized Caddy binary with custom plugins
+FROM golang:1.25-alpine AS builder
 
-COPY rh_identity_transform .
+WORKDIR /build
 
-RUN xcaddy build \
-  --with github.com/caddyserver/cache-handler \
-  --with github.com/caddyserver/transform-encoder \
-  --with rh_identity_transform=$(pwd)
+# Copy go module files first for better caching
+COPY go.mod go.sum ./
+COPY feo_interceptor/go.mod feo_interceptor/go.sum ./feo_interceptor/
+COPY rh_identity_transform/go.mod rh_identity_transform/go.sum ./rh_identity_transform/
+
+# Download dependencies
+RUN go mod download
+
+# Copy source code
+COPY cmd ./cmd
+COPY feo_interceptor ./feo_interceptor
+COPY rh_identity_transform ./rh_identity_transform
+
+# Build the binary
+RUN CGO_ENABLED=0 GOOS=linux go build -o /usr/bin/caddy ./cmd/frontend-development-proxy
 
 FROM caddy:2.10.2
 
