@@ -1,0 +1,24 @@
+# Frontend CRD Configuration for FEO Interceptor
+#
+# This file enables the FEO (Frontend Environment Orchestrator) interceptor
+# to merge local frontend configuration with remote Chrome Service responses.
+#
+# For complete configuration examples and available options, see:
+# https://github.com/RedHatInsights/frontend-development-proxy#feo-frontend-environment-orchestrator-interceptor
+
+apiVersion: v1
+kind: List
+objects:
+  - apiVersion: console.redhat.com/v1
+    kind: ConsoleFrontend
+    metadata:
+      name: my-app
+    spec:
+      feoConfigEnabled: true
+      
+      module:
+        manifestLocation: /apps/my-app/fed-mods.json
+      
+      frontend:
+        paths:
+          - /apps/my-app

@@ -23,3 +23,15 @@ go.work.sum
 
 # env file
 .env
+
+# Build artifacts
+frontend-development-proxy
+
+# Local frontend CRD configuration (users create from frontend.example.yaml)
+deploy/frontend.yaml
+config/deploy/frontend.yaml
+
+# Test artifacts
+mock-upstream/
+api/
+*.log
