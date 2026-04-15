@@ -149,3 +149,11 @@ You can route specific API paths to your local machine (or other targets) while 
       -v $(pwd)/my-routes.json:/config/custom_routes.json:Z \
       quay.io/redhat-services/frontend-development-proxy:latest
     ```
+
+## Documentation
+
+- [AGENTS.md](AGENTS.md) — AI agent onboarding guide, project conventions, and docs index
+- [CONTRIBUTING.md](CONTRIBUTING.md) — How to contribute (commit conventions, code style, PR guidelines)
+- [Architecture](docs/ARCHITECTURE.md) — System design, request flow, and key design decisions
+- [Security Guidelines](docs/security-guidelines.md) — JWT handling, proxy security, container security
+- [Testing Guidelines](docs/testing-guidelines.md) — Go module testing, integration test patterns
