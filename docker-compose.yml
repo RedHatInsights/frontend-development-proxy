@@ -1,0 +1,15 @@
+services:
+  proxy-iop:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - 1337:1337
+    environment:
+      HCC_ENV: iop
+      PROXY_PORT: 1337
+      HCC_ENV_URL: "https://ip-10-0-198-238.rhos-01.prod.psi.rdu2.redhat.com"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:z
+      - ./config/custom_routes.json:/config/custom_routes.json:z
+      
