@@ -21,9 +21,11 @@
 	handle {
 		cache
 		reverse_proxy {$HCC_ENV_URL} {
-			header_up Host {http.reverse_proxy.upstream.hostport}
 			header_up Accept-Encoding "gzip;q=0,deflate,sdch"
 			header_up -Origin
+			transport http {
+				tls_insecure_skip_verify
+			}
 		}
 	}
 
