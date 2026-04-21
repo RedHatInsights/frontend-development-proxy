@@ -3,9 +3,27 @@
 # DEFINE SOURCES
 # The built-in default routes (Stage/Prod)
 MAIN_ROUTES="$ROUTES_JSON_PATH"
-# The optional developer overrides (Localhost)
-# Defaults to a specific path, but can be overridden by env var
-CUSTOM_ROUTES="${LOCAL_CUSTOM_ROUTES_PATH:-/config/custom_routes.json}"
+
+# IOP mode is opt-in via IOP=true only.
+IOP_ENABLED=false
+if [ "${IOP:-false}" = "true" ]; then
+  IOP_ENABLED=true
+fi
+
+# The optional developer overrides (Localhost).
+# In IOP mode we default to a dedicated override file.
+if [ "$IOP_ENABLED" = "true" ]; then
+  DEFAULT_CUSTOM_ROUTES_PATH="/config/custom_routes.iop.json"
+  CADDY_CONFIG_PATH="/etc/caddy/Caddyfile.iop"
+  echo ">>> IOP mode enabled (IOP=true)"
+else
+  DEFAULT_CUSTOM_ROUTES_PATH="/config/custom_routes.json"
+  CADDY_CONFIG_PATH="/etc/caddy/Caddyfile"
+  echo ">>> IOP mode disabled (default behavior)"
+fi
+
+# Can still be overridden by env var for both modes.
+CUSTOM_ROUTES="${LOCAL_CUSTOM_ROUTES_PATH:-$DEFAULT_CUSTOM_ROUTES_PATH}"
 
 # MERGE CONFIGURATION
 # Determine which config files exist and merge accordingly
@@ -44,7 +62,9 @@ output=$(
         printf "\thandle @html_fallback {\n"
         printf "\t\trewrite * /apps/chrome/index.html\n"
         printf "\t\treverse_proxy %s {\n" "$url"
-        printf "\t\t\theader_up Host {http.reverse_proxy.upstream.hostport}\n"
+        if [ "$IOP_ENABLED" != "true" ]; then
+          printf "\t\t\theader_up Host {http.reverse_proxy.upstream.hostport}\n"
+        fi
         printf '\t\t\theader_up Cache-Control "no-cache, no-store, must-revalidate"\n'
         printf "\t\t}\n"
         printf "\t}\n\n"
@@ -52,7 +72,9 @@ output=$(
 
       printf "\thandle %s {\n" "$path"
       printf "\t\treverse_proxy %s {\n" "$url"
-      printf "\t\t\theader_up Host {http.reverse_proxy.upstream.hostport}\n"
+      if [ "$IOP_ENABLED" != "true" ]; then
+        printf "\t\t\theader_up Host {http.reverse_proxy.upstream.hostport}\n"
+      fi
       printf '\t\t\theader_up Cache-Control "no-cache, no-store, must-revalidate"\n'
       printf "\t\t}\n"
       if [ "$rh_identity" = "true" ]; then
@@ -62,4 +84,4 @@ output=$(
     done
 )
 
-LOCAL_ROUTES=$output /usr/bin/caddy run --config /etc/caddy/Caddyfile
+LOCAL_ROUTES=$output /usr/bin/caddy run --config "$CADDY_CONFIG_PATH" --adapter caddyfile
