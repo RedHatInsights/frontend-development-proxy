@@ -1,0 +1,9 @@
+{
+  "name": "frontend-development-proxy",
+  "private": true,
+  "scripts": {
+    "dev-proxy": "docker compose up --build",
+    "dev-proxy:down": "docker compose down",
+    "IOP": "IOP=true HCC_ENV=iop HCC_ENV_URL=https://ip-10-0-167-196.rhos-01.prod.psi.rdu2.redhat.com LOCAL_CUSTOM_ROUTES_PATH=/config/custom_routes.iop.json docker compose up --build"
+  }
+}

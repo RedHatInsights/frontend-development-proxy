@@ -28,6 +28,7 @@ RUN --mount=type=bind,source=tests/,target=/tmp/tests/ \
     bash /tmp/tests/test_logging.sh
 
 COPY Caddyfile /etc/caddy/Caddyfile
+COPY Caddyfile.iop /etc/caddy/Caddyfile.iop
 
 ENV HCC_ENV="stage"
 ENV PROXY_PORT="1337"
