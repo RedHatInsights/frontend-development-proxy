@@ -1,0 +1,18 @@
+services:
+  proxy-iop:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "${PROXY_PORT:-1337}:${PROXY_PORT:-1337}"
+    environment:
+      IOP: "${IOP:-false}"
+      HCC_ENV: "${HCC_ENV:-stage}"
+      PROXY_PORT: "${PROXY_PORT:-1337}"
+      HCC_ENV_URL: "${HCC_ENV_URL:-https://console.stage.redhat.com}"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:z
+      - ./Caddyfile.iop:/etc/caddy/Caddyfile.iop:z
+      - ./config/routes.json:/config/routes.json:z
+      - ./config/custom_routes.json:/config/custom_routes.json:z
+      - ./config/custom_routes.iop.json:/config/custom_routes.iop.json:z

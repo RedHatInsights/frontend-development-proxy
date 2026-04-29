@@ -21,6 +21,7 @@ COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
 COPY Caddyfile /etc/caddy/Caddyfile
+COPY Caddyfile.iop /etc/caddy/Caddyfile.iop
 
 ENV HCC_ENV="stage"
 ENV PROXY_PORT="1337"

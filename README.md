@@ -26,6 +26,52 @@ podman run -d
 
 All you really need is Podman or Docker and the app you want to test :)
 
+### Local startup modes
+
+This repository now supports an explicit IOP toggle via `IOP`.
+
+- Normal mode (default behavior): `npm run dev-proxy`
+- IOP mode: `npm run IOP`
+- Stop either mode: `npm run dev-proxy:down`
+
+IOP mode is enabled only when `IOP` is exactly the string `true`.
+When enabled, the proxy loads IOP-specific route overrides from
+`config/custom_routes.iop.json` (or your `LOCAL_CUSTOM_ROUTES_PATH` override).
+When disabled/unset, default behavior is unchanged and the proxy uses
+`config/custom_routes.json`.
+IOP mode also uses `Caddyfile.iop` while normal mode uses `Caddyfile`.
+
+In IOP mode specifically:
+- The fallback proxy uses TLS transport with `tls_insecure_skip_verify`.
+- Generated local route `reverse_proxy` blocks omit `header_up Host {http.reverse_proxy.upstream.hostport}`.
+
+### External launcher contract (fec dev-proxy)
+
+This image can be launched externally (for example by
+`@redhat-cloud-services/frontend-components-config` via `fec dev-proxy`).
+The proxy itself only reads standard env vars and mounted files:
+
+- `IOP` enables IOP mode only when exactly `true`.
+- `ROUTES_JSON_PATH` points to main routes (default `/config/routes.json`).
+- `LOCAL_CUSTOM_ROUTES_PATH` points to custom route overlay.
+
+Expected IOP parity contract for external launchers:
+
+- Env:
+  - `IOP=true`
+  - `LOCAL_CUSTOM_ROUTES_PATH=/config/custom_routes.iop.json`
+- Mounts:
+  - generated main routes -> `/config/routes.json`
+  - optional IOP custom routes -> `/config/custom_routes.iop.json`
+
+Important:
+
+- `FEC_IOP_CUSTOM_ROUTES_PATH` is a caller-side variable used by `fec dev-proxy`
+  to decide whether to mount a host file. This proxy image does not read
+  `FEC_IOP_CUSTOM_ROUTES_PATH` directly.
+- If the custom IOP file is not mounted/present, startup falls back to main routes
+  and logs `Loading default routes only`.
+
 ### Hosts setup
 
 In order to access the https://[env].foo.redhat.com in your browser, you have
@@ -110,6 +156,13 @@ change the exposed URL you are gonna be using.
 
 For testing against stage you will also need to set the `HTTPS_PROXY` environment
 variable to the RH stage proxy URL.
+
+#### IOP mode contract
+
+- Env var name: `IOP`
+- Type: boolean conveyed as string
+- Enabled only when: `IOP=true` (exact match)
+- Default: disabled (unset/any other value)
 
 ## DinD (docker-in-docker CI)
 
