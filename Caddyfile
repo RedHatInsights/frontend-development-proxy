@@ -1,7 +1,6 @@
 {
 	order rewrite before reverse_proxy
 	order rh_identity_transform before respond
-	cache
 	admin off
 }
 
@@ -17,6 +16,14 @@
 	}
 
 	{$LOCAL_ROUTES}
+
+	handle /api/* {
+		reverse_proxy {$HCC_ENV_URL} {
+			header_up Host {http.reverse_proxy.upstream.hostport}
+			header_up Accept-Encoding "gzip;q=0,deflate,sdch"
+			header_up -Origin
+		}
+	}
 
 	handle {
 		cache
