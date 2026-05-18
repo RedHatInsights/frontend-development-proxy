@@ -1,0 +1,18 @@
+version: '3'
+
+services:
+  proxy-iop:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - 1337:1337
+    environment:
+      HCC_ENV: iop
+      PROXY_PORT: 1337
+      HCC_ENV_URL: "<your-foreman-instance>"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:Z
+      - ./config/custom_routes.json:/config/custom_routes.json:Z
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
