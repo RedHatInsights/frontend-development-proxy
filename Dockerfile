@@ -20,6 +20,10 @@ RUN apk add --no-cache tini
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
+# Run tests during build — fails the build (and CI) if tests break
+COPY tests/ /tmp/tests/
+RUN bash /tmp/tests/test_logging.sh && rm -rf /tmp/tests/
+
 COPY Caddyfile /etc/caddy/Caddyfile
 
 ENV HCC_ENV="stage"
