@@ -2,11 +2,14 @@
 	order rewrite before reverse_proxy
 	order rh_identity_transform before respond
 	admin off
+	log {
+		output {$LOG_OUTPUT:stdout}
+	}
 }
 
 {$HCC_ENV}.foo.redhat.com:{$PROXY_PORT} {
 	log default {
-		output stdout
+		output {$LOG_OUTPUT:stdout}
 		format transform "{common_log}"
 	}
 

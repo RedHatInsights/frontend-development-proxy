@@ -1,5 +1,15 @@
 #!/bin/bash
 
+# CONFIGURE LOGGING
+# Set PROXY_LOGGING=false to disable all log output from the proxy.
+# This suppresses both Caddy access/runtime logs and entrypoint messages.
+if [ "${PROXY_LOGGING}" = "false" ]; then
+  export LOG_OUTPUT="discard"
+  log_msg() { :; }
+else
+  log_msg() { echo "$@"; }
+fi
+
 # DEFINE SOURCES
 # The built-in default routes (Stage/Prod)
 MAIN_ROUTES="$ROUTES_JSON_PATH"
@@ -10,18 +20,18 @@ CUSTOM_ROUTES="${LOCAL_CUSTOM_ROUTES_PATH:-/config/custom_routes.json}"
 # MERGE CONFIGURATION
 # Determine which config files exist and merge accordingly
 if [ -f "$MAIN_ROUTES" ] && [ -f "$CUSTOM_ROUTES" ]; then
-  echo ">>> Loading routes with custom overrides from $CUSTOM_ROUTES"
-  # jq -s '.[0] * .[1]' merges the two files. 
+  log_msg ">>> Loading routes with custom overrides from $CUSTOM_ROUTES"
+  # jq -s '.[0] * .[1]' merges the two files.
   # File [1] (custom) overwrites File [0] (main).
   JSON_INPUT=$(jq -s '.[0] * .[1]' "$MAIN_ROUTES" "$CUSTOM_ROUTES")
 elif [ -f "$CUSTOM_ROUTES" ]; then
-  echo ">>> Loading custom routes only from $CUSTOM_ROUTES"
+  log_msg ">>> Loading custom routes only from $CUSTOM_ROUTES"
   JSON_INPUT=$(cat "$CUSTOM_ROUTES")
 elif [ -f "$MAIN_ROUTES" ]; then
-  echo ">>> Loading default routes only"
+  log_msg ">>> Loading default routes only"
   JSON_INPUT=$(cat "$MAIN_ROUTES")
 else
-  echo ">>> No routes configured, using fallback only"
+  log_msg ">>> No routes configured, using fallback only"
   JSON_INPUT="{}"
 fi
 
