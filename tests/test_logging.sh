@@ -136,6 +136,41 @@ entrypoint_output=$(unset PROXY_LOGGING; ROUTES_JSON_PATH=/nonexistent LOCAL_CUS
 ' 2>&1)
 assert_contains "Output present when PROXY_LOGGING not set" ">>> No routes configured" "$entrypoint_output"
 
+# --- Test 8: err_msg always outputs to stderr, even when logging disabled ---
+err_output=$(PROXY_LOGGING=false bash -c '
+  if [ "${PROXY_LOGGING}" = "false" ]; then
+    export LOG_OUTPUT="discard"
+    log_msg() { :; }
+  else
+    log_msg() { echo "$@"; }
+  fi
+  err_msg() { echo "ERROR: $*" >&2; }
+  log_msg "this should be hidden"
+  err_msg "this should be visible"
+' 2>&1)
+assert_contains "err_msg visible when PROXY_LOGGING=false" "ERROR: this should be visible" "$err_output"
+assert_not_contains "log_msg hidden when PROXY_LOGGING=false" "this should be hidden" "$err_output"
+
+# --- Test 9: Invalid JSON produces contextual error with file path ---
+INVALID_JSON_FILE=$(mktemp)
+echo '{"key": "value",}' > "$INVALID_JSON_FILE"
+err_output=$(PROXY_LOGGING=false ROUTES_JSON_PATH="$INVALID_JSON_FILE" LOCAL_CUSTOM_ROUTES_PATH=/nonexistent bash -c '
+  source "'"$SCRIPT_DIR"'/entrypoint.sh"
+' 2>&1 || true)
+assert_contains "Invalid JSON error includes file path" "$INVALID_JSON_FILE" "$err_output"
+assert_contains "Invalid JSON error includes ERROR prefix" "ERROR:" "$err_output"
+rm -f "$INVALID_JSON_FILE"
+
+# --- Test 10: Invalid JSON error visible even with logging disabled ---
+INVALID_JSON_FILE=$(mktemp)
+echo '{"trailing": "comma",}' > "$INVALID_JSON_FILE"
+err_output=$(PROXY_LOGGING=false ROUTES_JSON_PATH="$INVALID_JSON_FILE" LOCAL_CUSTOM_ROUTES_PATH=/nonexistent bash -c '
+  source "'"$SCRIPT_DIR"'/entrypoint.sh"
+' 2>&1 || true)
+assert_contains "Error output present with PROXY_LOGGING=false" "ERROR:" "$err_output"
+assert_contains "Error mentions failed parse" "Failed to parse" "$err_output"
+rm -f "$INVALID_JSON_FILE"
+
 # --- Summary ---
 echo ""
 echo "Results: $PASS passed, $FAIL failed"
