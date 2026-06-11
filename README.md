@@ -111,6 +111,17 @@ change the exposed URL you are gonna be using.
 For testing against stage you will also need to set the `HTTPS_PROXY` environment
 variable to the RH stage proxy URL.
 
+To disable all log output from the proxy (both Caddy access/runtime logs and
+entrypoint messages), set `PROXY_LOGGING=false`:
+
+```sh
+podman run -d \
+  -e PROXY_LOGGING=false \
+  -p 1337:1337 \
+  -v "$(pwd)/config:/config:ro,Z" \
+  quay.io/redhat-user-workloads/hcc-platex-services-tenant/frontend-development-proxy:latest
+```
+
 ## DinD (docker-in-docker CI)
 
 If your CI is a docker-in-docker setup, then there is a problem with using the

@@ -65,6 +65,7 @@ A configurable container proxy for HCC (Hybrid Cloud Console) UI and E2E testing
 | `HCC_ENV_URL` | `https://console.stage.redhat.com` | Upstream HCC environment URL |
 | `ROUTES_JSON_PATH` | `/config/routes.json` | Path to main routes config |
 | `LOCAL_CUSTOM_ROUTES_PATH` | `/config/custom_routes.json` | Path to custom route overrides |
+| `PROXY_LOGGING` | _(enabled)_ | Set to `false` to disable all log output |
 | `HTTPS_PROXY` | _(none)_ | HTTP proxy for reaching stage/prod |
 
 ## Common Pitfalls
