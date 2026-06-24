@@ -71,7 +71,8 @@ fi
 
 # GENERATE CADDY CONFIG
 # We pipe the merged JSON_INPUT into the existing loop logic
-route_tsv=$(echo "$JSON_INPUT" | jq -r 'to_entries[] | [.key, .value.url, (
+# Using ASCII record separator (0x1E) to avoid tab collapse on empty fields
+route_lines=$(echo "$JSON_INPUT" | jq -r 'to_entries[] | [.key, .value.url, (
     if .key | startswith("/api/") then
         if .value."rh-identity-headers" == false then
             false
@@ -81,15 +82,15 @@ route_tsv=$(echo "$JSON_INPUT" | jq -r 'to_entries[] | [.key, .value.url, (
     else
         .value."rh-identity-headers" // false
     end
-), .value."is_chrome"] | @tsv' 2>&1) || {
+), (.value."is_chrome" // ""), (.value.strip_prefix // "")] | join("")' 2>&1) || {
   err_msg "Failed to generate route config from merged JSON"
-  err_msg "$route_tsv"
+  err_msg "$route_lines"
   exit 1
 }
 
 output=$(
-  echo "$route_tsv" |
-    while IFS=$'\t' read -r path url rh_identity is_chrome; do
+  echo "$route_lines" |
+    while IFS=$'\036' read -r path url rh_identity is_chrome strip_prefix; do
       if [ "$is_chrome" = "true" ]; then
         printf "\thandle @html_fallback {\n"
         printf "\t\trewrite * /apps/chrome/index.html\n"
@@ -103,6 +104,9 @@ output=$(
       fi
 
       printf "\thandle %s {\n" "$path"
+      if [ -n "$strip_prefix" ]; then
+        printf "\t\turi strip_prefix %s\n" "$strip_prefix"
+      fi
       printf "\t\treverse_proxy %s {\n" "$url"
       if [ "$IOP_ENABLED" != "true" ]; then
         printf "\t\t\theader_up Host {http.reverse_proxy.upstream.hostport}\n"

@@ -117,6 +117,62 @@ Example:
 }
 ```
 
+#### Path prefix stripping
+
+For IOP development where the production URL path differs from your local dev server's path, use `strip_prefix`:
+
+```jsonc
+{
+  // IOP production path: /assets/apps/vulnerability/fed-mods.json
+  // Local dev server serves from root: /fed-mods.json
+  "/assets/apps/vulnerability/*": {
+    "url": "http://host.docker.internal:8003",
+    "strip_prefix": "/assets/apps/vulnerability"
+  }
+}
+```
+
+This transforms:
+- `/assets/apps/vulnerability/fed-mods.json` → `/fed-mods.json`
+- `/assets/apps/vulnerability/js/runtime.js` → `/js/runtime.js`
+
+### IOP Mode Setup (for app developers)
+
+To run your app locally against IOP, create a `custom_routes.json` in your app repo:
+
+```jsonc
+// custom_routes.json (in your app repo root)
+{
+  "/assets/apps/YOUR-APP/*": {
+    "url": "http://host.docker.internal:8003",
+    "strip_prefix": "/assets/apps/YOUR-APP"
+  },
+  "/api/YOUR-APP/*": {
+    "url": "http://host.docker.internal:8000"
+  }
+}
+```
+
+Then add an npm script to your `package.json`:
+
+```json
+{
+  "scripts": {
+    "start:proxy:iop": "PROXY=true IOP=true FEC_IOP_CUSTOM_ROUTES_PATH=$(pwd)/custom_routes.json fec dev-proxy --iop"
+  }
+}
+```
+
+Now you can run:
+```bash
+npm run start:proxy:iop
+```
+
+This will:
+1. Start `fec dev-proxy` in IOP mode
+2. Mount your app's `custom_routes.json` into the proxy container
+3. Proxy IOP requests through to your local dev server
+
 #### Using a locally running Chrome UI
 
 For development with locally running Chrome UI

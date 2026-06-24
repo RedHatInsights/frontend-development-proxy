@@ -1,5 +1,6 @@
 {
 	order rewrite before reverse_proxy
+	order uri before reverse_proxy
 	order rh_identity_transform before respond
 	admin off
 	log {

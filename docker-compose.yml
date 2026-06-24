@@ -11,6 +11,7 @@ services:
       PROXY_PORT: "${PROXY_PORT:-1337}"
       HCC_ENV_URL: https://ip-10-0-167-196.rhos-01.prod.psi.rdu2.redhat.com
     volumes:
+      - ./entrypoint.sh:/usr/local/bin/entrypoint.sh:z
       - ./Caddyfile:/etc/caddy/Caddyfile:z
       - ./Caddyfile.iop:/etc/caddy/Caddyfile.iop:z
       - ./config/routes.json:/config/routes.json:z
