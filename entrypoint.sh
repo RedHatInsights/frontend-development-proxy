@@ -130,4 +130,4 @@ if [ -w /etc/resolv.conf ] 2>/dev/null; then
   fi
 fi
 
-LOCAL_ROUTES=$output /usr/bin/caddy run --config "$CADDY_CONFIG_PATH" --adapter caddyfile
+LOCAL_ROUTES=$output /usr/bin/caddy run --config "$CADDY_CONFIG_PATH"

@@ -26,23 +26,57 @@ podman run -d
 
 All you really need is Podman or Docker and the app you want to test :)
 
-### Local startup modes
+### Local Testing (Proxy Development)
 
-This repository now supports an explicit IOP toggle via `IOP`.
+For testing the proxy container itself during development:
 
-- Normal mode (default behavior): `npm run dev-proxy`
-- IOP mode: `npm run IOP`
-- Stop either mode: `npm run dev-proxy:down`
+**Build the image:**
+```bash
+podman build -t localhost/frontend-development-proxy:local .
+```
+
+**Run in normal mode:**
+```bash
+podman run -d \
+  -e HCC_ENV=stage \
+  -e HCC_ENV_URL=https://console.stage.redhat.com \
+  -e HTTPS_PROXY=$RH_PROXY_URL \
+  -p 1337:1337 \
+  -v "$(pwd)/config/routes.json:/config/routes.json:ro,z" \
+  --name frontend-development-proxy \
+  localhost/frontend-development-proxy:local
+```
+
+**Run in IOP mode:**
+```bash
+podman run -d \
+  -e IOP=true \
+  -e HCC_ENV=iop \
+  -e HCC_ENV_URL=https://your-iop-instance.example.com \
+  -e LOCAL_CUSTOM_ROUTES_PATH=/config/custom_routes.iop.json \
+  -p 1337:1337 \
+  -v "$(pwd)/config/routes.json:/config/routes.json:ro,z" \
+  -v "/path/to/your/custom_routes.json:/config/custom_routes.iop.json:ro,z" \
+  --name frontend-development-proxy \
+  localhost/frontend-development-proxy:local
+```
+
+**Stop:**
+```bash
+podman stop frontend-development-proxy
+podman rm frontend-development-proxy
+```
+
+**Note**: Most users should use `fec dev-proxy` from `@redhat-cloud-services/frontend-components-config` instead of running the container directly.
 
 IOP mode is enabled only when `IOP` is exactly the string `true`.
-When enabled, the proxy loads IOP-specific route overrides from
-`config/custom_routes.iop.json` (or your `LOCAL_CUSTOM_ROUTES_PATH` override).
+When enabled, the proxy loads IOP-specific route overrides from the path specified by
+`LOCAL_CUSTOM_ROUTES_PATH` (if provided and the file exists).
 When disabled/unset, default behavior is unchanged and the proxy uses
-`config/custom_routes.json`.
+`/config/custom_routes.json` (if mounted).
 IOP mode also uses `Caddyfile.iop` while normal mode uses `Caddyfile`.
 
 In IOP mode specifically:
-- The fallback proxy uses TLS transport with `tls_insecure_skip_verify`.
 - Generated local route `reverse_proxy` blocks omit `header_up Host {http.reverse_proxy.upstream.hostport}`.
 
 ### External launcher contract (fec dev-proxy)
@@ -153,25 +187,31 @@ To run your app locally against IOP, create a `custom_routes.json` in your app r
 }
 ```
 
-Then add an npm script to your `package.json`:
+Then run with environment variables:
+
+```bash
+export IOP_URL=https://your-iop-instance.example.com
+export FEC_DEV_PROXY_IMAGE=localhost/frontend-development-proxy:local
+export FEC_IOP_CUSTOM_ROUTES_PATH=$(pwd)/custom_routes.json
+
+npm run start:proxy:iop
+```
+
+Or add an npm script to your `package.json`:
 
 ```json
 {
   "scripts": {
-    "start:proxy:iop": "PROXY=true IOP=true FEC_IOP_CUSTOM_ROUTES_PATH=$(pwd)/custom_routes.json fec dev-proxy --iop"
+    "start:proxy:iop": "PROXY=true IOP=true fec dev-proxy --iop"
   }
 }
 ```
 
-Now you can run:
-```bash
-npm run start:proxy:iop
-```
-
 This will:
 1. Start `fec dev-proxy` in IOP mode
-2. Mount your app's `custom_routes.json` into the proxy container
+2. Mount your app's `custom_routes.json` into the proxy container (via `FEC_IOP_CUSTOM_ROUTES_PATH`)
 3. Proxy IOP requests through to your local dev server
+4. Access at `https://iop.foo.redhat.com:1337`
 
 #### Using a locally running Chrome UI
 
@@ -229,6 +269,17 @@ podman run -d \
 - Type: boolean conveyed as string
 - Enabled only when: `IOP=true` (exact match)
 - Default: disabled (unset/any other value)
+
+#### ⚠️ Security Warning: IOP Mode TLS Verification
+
+**IOP mode disables TLS certificate verification (`tls_insecure_skip_verify`)** when proxying to the upstream IOP instance. This means:
+- **Man-in-the-middle attacks are possible** — an attacker on your network could intercept traffic
+- **Certificate errors are silently ignored** — expired, self-signed, or invalid certificates will be accepted
+- **DO NOT use this mode on untrusted networks** (public WiFi, shared networks, etc.)
+
+**Why this is necessary**: IOP instances often use self-signed certificates or internal CAs not trusted by the system store, making strict TLS verification impractical for local development.
+
+**For production-like security**: Configure your system to trust the IOP instance's CA certificate instead of using this mode. See your IOP administrator for the CA certificate bundle.
 
 ## DinD (docker-in-docker CI)
 
