@@ -94,4 +94,14 @@ output=$(
     done
 )
 
+# Add fallback DNS resolvers to prevent resolution failures in Docker Desktop
+# Docker Desktop on macOS can have intermittent DNS issues (after sleep, network switch, VPN toggle)
+if [ -w /etc/resolv.conf ] 2>/dev/null; then
+  if ! grep -q "8.8.8.8" /etc/resolv.conf 2>/dev/null; then
+    echo "nameserver 8.8.8.8" >> /etc/resolv.conf
+    echo "nameserver 1.1.1.1" >> /etc/resolv.conf
+    echo ">>> Added fallback DNS resolvers"
+  fi
+fi
+
 LOCAL_ROUTES=$output /usr/bin/caddy run --config /etc/caddy/Caddyfile
