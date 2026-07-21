@@ -18,22 +18,50 @@
 		not path_regexp .*\/(silent-check-sso\.html)$
 	}
 
+	@iop expression `{env.HCC_ENV}.startsWith("iop")`
+
 	{$LOCAL_ROUTES}
 
 	handle /api/* {
-		reverse_proxy {$HCC_ENV_URL} {
-			header_up Host {http.reverse_proxy.upstream.hostport}
-			header_up Accept-Encoding "gzip;q=0,deflate,sdch"
-			header_up -Origin
+		handle @iop {
+			reverse_proxy {$HCC_ENV_URL} {
+				header_up Host {http.reverse_proxy.upstream.hostport}
+				header_up Accept-Encoding "gzip;q=0,deflate,sdch"
+				header_up -Origin
+				header_down Location {http.reverse_proxy.upstream.host} {http.request.hostport}
+				transport http {
+					tls_insecure_skip_verify
+				}
+			}
+		}
+		handle {
+			reverse_proxy {$HCC_ENV_URL} {
+				header_up Host {http.reverse_proxy.upstream.hostport}
+				header_up Accept-Encoding "gzip;q=0,deflate,sdch"
+				header_up -Origin
+			}
 		}
 	}
 
 	handle {
 		cache
-		reverse_proxy {$HCC_ENV_URL} {
-			header_up Host {http.reverse_proxy.upstream.hostport}
-			header_up Accept-Encoding "gzip;q=0,deflate,sdch"
-			header_up -Origin
+		handle @iop {
+			reverse_proxy {$HCC_ENV_URL} {
+				header_up Host {http.reverse_proxy.upstream.hostport}
+				header_up Accept-Encoding "gzip;q=0,deflate,sdch"
+				header_up -Origin
+				header_down Location {http.reverse_proxy.upstream.host} {http.request.hostport}
+				transport http {
+					tls_insecure_skip_verify
+				}
+			}
+		}
+		handle {
+			reverse_proxy {$HCC_ENV_URL} {
+				header_up Host {http.reverse_proxy.upstream.hostport}
+				header_up Accept-Encoding "gzip;q=0,deflate,sdch"
+				header_up -Origin
+			}
 		}
 	}
 
