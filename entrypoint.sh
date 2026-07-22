@@ -28,13 +28,13 @@ fi
 # In IOP mode we default to a dedicated override file.
 if [ "$IOP_ENABLED" = "true" ]; then
   DEFAULT_CUSTOM_ROUTES_PATH="/config/custom_routes.iop.json"
-  CADDY_CONFIG_PATH="/etc/caddy/Caddyfile.iop"
   echo ">>> IOP mode enabled (IOP=true)"
 else
   DEFAULT_CUSTOM_ROUTES_PATH="/config/custom_routes.json"
-  CADDY_CONFIG_PATH="/etc/caddy/Caddyfile"
   echo ">>> IOP mode disabled (default behavior)"
 fi
+
+CADDY_CONFIG_PATH="/etc/caddy/Caddyfile"
 
 # Can still be overridden by env var for both modes.
 CUSTOM_ROUTES="${LOCAL_CUSTOM_ROUTES_PATH:-$DEFAULT_CUSTOM_ROUTES_PATH}"

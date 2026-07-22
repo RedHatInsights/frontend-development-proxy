@@ -42,15 +42,6 @@ assert_not_contains() {
 }
 
 # --- Test 1: PROXY_LOGGING=false sets LOG_OUTPUT=discard ---
-result=$(PROXY_LOGGING=false bash -c '
-  source "'"$SCRIPT_DIR"'/entrypoint.sh" 2>/dev/null &
-  PID=$!
-  sleep 0.1
-  kill $PID 2>/dev/null
-  echo "$LOG_OUTPUT"
-' 2>/dev/null || true)
-
-# Source just the logging section to test env var
 log_output_val=$(PROXY_LOGGING=false bash -c '
   if [ "${PROXY_LOGGING}" = "false" ]; then
     export LOG_OUTPUT="discard"

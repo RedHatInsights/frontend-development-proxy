@@ -21,14 +21,11 @@ COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
 # Run tests during build — fails the build (and CI) if tests break
-# Tests use SCRIPT_DIR (parent of tests/) to locate entrypoint.sh,
-# so we bind-mount both to avoid including test files in the final image
-RUN --mount=type=bind,source=tests/,target=/tmp/tests/ \
-    --mount=type=bind,source=entrypoint.sh,target=/tmp/entrypoint.sh \
-    bash /tmp/tests/test_logging.sh
+COPY tests/ /tmp/tests/
+COPY entrypoint.sh /tmp/entrypoint.sh
+RUN bash /tmp/tests/test_logging.sh && rm -rf /tmp/tests/ /tmp/entrypoint.sh
 
 COPY Caddyfile /etc/caddy/Caddyfile
-COPY Caddyfile.iop /etc/caddy/Caddyfile.iop
 
 ENV HCC_ENV="stage"
 ENV PROXY_PORT="1337"

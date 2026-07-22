@@ -24,87 +24,101 @@ podman run -d
 
 ## Setup
 
-All you really need is Podman or Docker and the app you want to test :)
+### For App Developers (Using the Proxy)
 
-### Local Testing (Proxy Development)
+Most users consume this proxy through `fec dev-proxy` from `@redhat-cloud-services/frontend-components-config`.
 
-For testing the proxy container itself during development:
+#### Normal Mode (Stage/Prod)
 
-**Build the image:**
+In your app's `package.json`:
+
+```json
+{
+  "scripts": {
+    "start:proxy": "PROXY=true fec dev"
+  }
+}
+```
+
+Then run: `npm run start:proxy`
+
+#### IOP Mode
+
+**1. Create a symlink in your app (one-time setup):**
+
+IOP serves assets from `/assets/apps/` but webpack builds to `/dist/apps/`. Create a symlink:
+
+```bash
+mkdir -p dist/assets && ln -s ../apps dist/assets/apps
+```
+
+**2. Update `fec.config.js` in your app:**
+
+```javascript
+module.exports = {
+  // ... other config
+  ...(process.env.IOP === 'true' ? { deployment: 'assets/apps' } : { publicPath: 'auto' }),
+  // ... rest of config
+}
+```
+
+**3. Create `custom_routes.json` in your app root:**
+
+```jsonc
+{
+  "/assets/apps/your-app/*": {
+    "url": "http://host.docker.internal:8003",
+    "strip_prefix": "/assets/apps/your-app"
+  },
+  "/api/your-app/*": {
+    "url": "http://host.docker.internal:8000"
+  }
+}
+```
+
+**4. Add script to your `package.json`:**
+
+```json
+{
+  "scripts": {
+    "start:proxy:iop": "PROXY=true IOP=true HCC_ENV=iop HCC_ENV_URL=${IOP_URL} FEC_IOP_CUSTOM_ROUTES_PATH=$(pwd)/custom_routes.json fec dev-proxy --iop"
+  }
+}
+```
+
+**5. Run:**
+
+```bash
+export IOP_URL=https://your-iop-instance.example.com
+npm run start:proxy:iop
+```
+
+Access at: `https://iop.foo.redhat.com:1337`
+
+The published proxy image will be pulled automatically.
+
+### For Proxy Developers (Working on This Repo)
+
+**Build the image locally:**
+
 ```bash
 podman build -t localhost/frontend-development-proxy:local .
 ```
 
-**Run in normal mode:**
+**Use the local image in your app:**
+
 ```bash
-podman run -d \
-  -e HCC_ENV=stage \
-  -e HCC_ENV_URL=https://console.stage.redhat.com \
-  -e HTTPS_PROXY=$RH_PROXY_URL \
-  -p 1337:1337 \
-  -v "$(pwd)/config/routes.json:/config/routes.json:ro,z" \
-  --name frontend-development-proxy \
-  localhost/frontend-development-proxy:local
+export FEC_DEV_PROXY_IMAGE=localhost/frontend-development-proxy:local
+npm run start:proxy:iop
 ```
 
-**Run in IOP mode:**
-```bash
-podman run -d \
-  -e IOP=true \
-  -e HCC_ENV=iop \
-  -e HCC_ENV_URL=https://your-iop-instance.example.com \
-  -e LOCAL_CUSTOM_ROUTES_PATH=/config/custom_routes.iop.json \
-  -p 1337:1337 \
-  -v "$(pwd)/config/routes.json:/config/routes.json:ro,z" \
-  -v "/path/to/your/custom_routes.json:/config/custom_routes.iop.json:ro,z" \
-  --name frontend-development-proxy \
-  localhost/frontend-development-proxy:local
-```
+This tells `fec dev-proxy` to use your local build instead of the published image.
 
-**Stop:**
-```bash
-podman stop frontend-development-proxy
-podman rm frontend-development-proxy
-```
+**How IOP Mode Works:**
 
-**Note**: Most users should use `fec dev-proxy` from `@redhat-cloud-services/frontend-components-config` instead of running the container directly.
-
-IOP mode is enabled only when `IOP` is exactly the string `true`.
-When enabled, the proxy loads IOP-specific route overrides from the path specified by
-`LOCAL_CUSTOM_ROUTES_PATH` (if provided and the file exists).
-When disabled/unset, default behavior is unchanged and the proxy uses
-`/config/custom_routes.json` (if mounted).
-IOP mode also uses `Caddyfile.iop` while normal mode uses `Caddyfile`.
-
-In IOP mode specifically:
-- Generated local route `reverse_proxy` blocks omit `header_up Host {http.reverse_proxy.upstream.hostport}`.
-
-### External launcher contract (fec dev-proxy)
-
-This image can be launched externally (for example by
-`@redhat-cloud-services/frontend-components-config` via `fec dev-proxy`).
-The proxy itself only reads standard env vars and mounted files:
-
-- `IOP` enables IOP mode only when exactly `true`.
-- `ROUTES_JSON_PATH` points to main routes (default `/config/routes.json`).
-- `LOCAL_CUSTOM_ROUTES_PATH` points to custom route overlay.
-
-Expected IOP parity contract for external launchers:
-
-- Env:
-  - `IOP=true`
-  - `LOCAL_CUSTOM_ROUTES_PATH=/config/custom_routes.iop.json`
-- Mounts:
-  - generated main routes -> `/config/routes.json`
-  - optional IOP custom routes -> `/config/custom_routes.iop.json`
-
-Important:
-
-- `FEC_IOP_CUSTOM_ROUTES_PATH` is a caller-side variable used by `fec dev-proxy`
-  to decide whether to mount a host file. This proxy image does not read
-  `FEC_IOP_CUSTOM_ROUTES_PATH` directly.
-- If the custom IOP file is not mounted/present, startup falls back to main routes
-  and logs `Loading default routes only`.
+When `HCC_ENV` starts with "iop", the Caddyfile activates IOP-specific features:
+- TLS certificate verification is disabled (`tls_insecure_skip_verify`)
+- Location headers are rewritten for proper redirects
 
 ### Hosts setup
 
@@ -169,49 +183,6 @@ For IOP development where the production URL path differs from your local dev se
 This transforms:
 - `/assets/apps/vulnerability/fed-mods.json` → `/fed-mods.json`
 - `/assets/apps/vulnerability/js/runtime.js` → `/js/runtime.js`
-
-### IOP Mode Setup (for app developers)
-
-To run your app locally against IOP, create a `custom_routes.json` in your app repo:
-
-```jsonc
-// custom_routes.json (in your app repo root)
-{
-  "/assets/apps/YOUR-APP/*": {
-    "url": "http://host.docker.internal:8003",
-    "strip_prefix": "/assets/apps/YOUR-APP"
-  },
-  "/api/YOUR-APP/*": {
-    "url": "http://host.docker.internal:8000"
-  }
-}
-```
-
-Then run with environment variables:
-
-```bash
-export IOP_URL=https://your-iop-instance.example.com
-export FEC_DEV_PROXY_IMAGE=localhost/frontend-development-proxy:local
-export FEC_IOP_CUSTOM_ROUTES_PATH=$(pwd)/custom_routes.json
-
-npm run start:proxy:iop
-```
-
-Or add an npm script to your `package.json`:
-
-```json
-{
-  "scripts": {
-    "start:proxy:iop": "PROXY=true IOP=true fec dev-proxy --iop"
-  }
-}
-```
-
-This will:
-1. Start `fec dev-proxy` in IOP mode
-2. Mount your app's `custom_routes.json` into the proxy container (via `FEC_IOP_CUSTOM_ROUTES_PATH`)
-3. Proxy IOP requests through to your local dev server
-4. Access at `https://iop.foo.redhat.com:1337`
 
 #### Using a locally running Chrome UI
 
