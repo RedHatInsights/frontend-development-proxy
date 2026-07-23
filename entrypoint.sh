@@ -17,9 +17,27 @@ err_msg() { echo "ERROR: $*" >&2; }
 # DEFINE SOURCES
 # The built-in default routes (Stage/Prod)
 MAIN_ROUTES="$ROUTES_JSON_PATH"
-# The optional developer overrides (Localhost)
-# Defaults to a specific path, but can be overridden by env var
-CUSTOM_ROUTES="${LOCAL_CUSTOM_ROUTES_PATH:-/config/custom_routes.json}"
+
+# IOP mode is opt-in via IOP=true only.
+IOP_ENABLED=false
+if [ "${IOP:-false}" = "true" ]; then
+  IOP_ENABLED=true
+fi
+
+# The optional developer overrides (Localhost).
+# In IOP mode we default to a dedicated override file.
+if [ "$IOP_ENABLED" = "true" ]; then
+  DEFAULT_CUSTOM_ROUTES_PATH="/config/custom_routes.iop.json"
+  echo ">>> IOP mode enabled (IOP=true)"
+else
+  DEFAULT_CUSTOM_ROUTES_PATH="/config/custom_routes.json"
+  echo ">>> IOP mode disabled (default behavior)"
+fi
+
+CADDY_CONFIG_PATH="/etc/caddy/Caddyfile"
+
+# Can still be overridden by env var for both modes.
+CUSTOM_ROUTES="${LOCAL_CUSTOM_ROUTES_PATH:-$DEFAULT_CUSTOM_ROUTES_PATH}"
 
 # MERGE CONFIGURATION
 # Determine which config files exist and merge accordingly
@@ -53,7 +71,8 @@ fi
 
 # GENERATE CADDY CONFIG
 # We pipe the merged JSON_INPUT into the existing loop logic
-route_tsv=$(echo "$JSON_INPUT" | jq -r 'to_entries[] | [.key, .value.url, (
+# Using ASCII record separator (0x1E) to avoid tab collapse on empty fields
+route_lines=$(echo "$JSON_INPUT" | jq -r 'to_entries[] | [.key, .value.url, (
     if .key | startswith("/api/") then
         if .value."rh-identity-headers" == false then
             false
@@ -63,28 +82,35 @@ route_tsv=$(echo "$JSON_INPUT" | jq -r 'to_entries[] | [.key, .value.url, (
     else
         .value."rh-identity-headers" // false
     end
-), .value."is_chrome"] | @tsv' 2>&1) || {
+), (.value."is_chrome" // ""), (.value.strip_prefix // "")] | join("")' 2>&1) || {
   err_msg "Failed to generate route config from merged JSON"
-  err_msg "$route_tsv"
+  err_msg "$route_lines"
   exit 1
 }
 
 output=$(
-  echo "$route_tsv" |
-    while IFS=$'\t' read -r path url rh_identity is_chrome; do
+  echo "$route_lines" |
+    while IFS=$'\036' read -r path url rh_identity is_chrome strip_prefix; do
       if [ "$is_chrome" = "true" ]; then
         printf "\thandle @html_fallback {\n"
         printf "\t\trewrite * /apps/chrome/index.html\n"
         printf "\t\treverse_proxy %s {\n" "$url"
-        printf "\t\t\theader_up Host {http.reverse_proxy.upstream.hostport}\n"
+        if [ "$IOP_ENABLED" != "true" ]; then
+          printf "\t\t\theader_up Host {http.reverse_proxy.upstream.hostport}\n"
+        fi
         printf '\t\t\theader_up Cache-Control "no-cache, no-store, must-revalidate"\n'
         printf "\t\t}\n"
         printf "\t}\n\n"
       fi
 
       printf "\thandle %s {\n" "$path"
+      if [ -n "$strip_prefix" ]; then
+        printf "\t\turi strip_prefix %s\n" "$strip_prefix"
+      fi
       printf "\t\treverse_proxy %s {\n" "$url"
-      printf "\t\t\theader_up Host {http.reverse_proxy.upstream.hostport}\n"
+      if [ "$IOP_ENABLED" != "true" ]; then
+        printf "\t\t\theader_up Host {http.reverse_proxy.upstream.hostport}\n"
+      fi
       printf '\t\t\theader_up Cache-Control "no-cache, no-store, must-revalidate"\n'
       printf "\t\t}\n"
       if [ "$rh_identity" = "true" ]; then
@@ -104,4 +130,4 @@ if [ -w /etc/resolv.conf ] 2>/dev/null; then
   fi
 fi
 
-LOCAL_ROUTES=$output /usr/bin/caddy run --config /etc/caddy/Caddyfile
+LOCAL_ROUTES=$output /usr/bin/caddy run --config "$CADDY_CONFIG_PATH"

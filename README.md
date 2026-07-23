@@ -24,7 +24,101 @@ podman run -d
 
 ## Setup
 
-All you really need is Podman or Docker and the app you want to test :)
+### For App Developers (Using the Proxy)
+
+Most users consume this proxy through `fec dev-proxy` from `@redhat-cloud-services/frontend-components-config`.
+
+#### Normal Mode (Stage/Prod)
+
+In your app's `package.json`:
+
+```json
+{
+  "scripts": {
+    "start:proxy": "PROXY=true fec dev"
+  }
+}
+```
+
+Then run: `npm run start:proxy`
+
+#### IOP Mode
+
+**1. Create a symlink in your app (one-time setup):**
+
+IOP serves assets from `/assets/apps/` but webpack builds to `/dist/apps/`. Create a symlink:
+
+```bash
+mkdir -p dist/assets && ln -s ../apps dist/assets/apps
+```
+
+**2. Update `fec.config.js` in your app:**
+
+```javascript
+module.exports = {
+  // ... other config
+  ...(process.env.IOP === 'true' ? { deployment: 'assets/apps' } : { publicPath: 'auto' }),
+  // ... rest of config
+}
+```
+
+**3. Create `custom_routes.json` in your app root:**
+
+```jsonc
+{
+  "/assets/apps/your-app/*": {
+    "url": "http://host.docker.internal:8003",
+    "strip_prefix": "/assets/apps/your-app"
+  },
+  "/api/your-app/*": {
+    "url": "http://host.docker.internal:8000"
+  }
+}
+```
+
+**4. Add script to your `package.json`:**
+
+```json
+{
+  "scripts": {
+    "start:proxy:iop": "PROXY=true IOP=true HCC_ENV=iop HCC_ENV_URL=${IOP_URL} FEC_IOP_CUSTOM_ROUTES_PATH=$(pwd)/custom_routes.json fec dev-proxy --iop"
+  }
+}
+```
+
+**5. Run:**
+
+```bash
+export IOP_URL=https://your-iop-instance.example.com
+npm run start:proxy:iop
+```
+
+Access at: `https://iop.foo.redhat.com:1337`
+
+The published proxy image will be pulled automatically.
+
+### For Proxy Developers (Working on This Repo)
+
+**Build the image locally:**
+
+```bash
+podman build -t localhost/frontend-development-proxy:local .
+```
+
+**Use the local image in your app:**
+
+```bash
+export FEC_DEV_PROXY_IMAGE=localhost/frontend-development-proxy:local
+npm run start:proxy:iop
+```
+
+This tells `fec dev-proxy` to use your local build instead of the published image.
+
+**How IOP Mode Works:**
+
+When `HCC_ENV` starts with "iop", the Caddyfile activates IOP-specific features:
+- TLS certificate verification is disabled (`tls_insecure_skip_verify`)
+- Location headers are rewritten for proper redirects
 
 ### Hosts setup
 
@@ -70,6 +164,25 @@ Example:
   "/api/NAME-OF-YOUR-APP/*": { "url": "http://host.docker.internal:8000" },
 }
 ```
+
+#### Path prefix stripping
+
+For IOP development where the production URL path differs from your local dev server's path, use `strip_prefix`:
+
+```jsonc
+{
+  // IOP production path: /assets/apps/vulnerability/fed-mods.json
+  // Local dev server serves from root: /fed-mods.json
+  "/assets/apps/vulnerability/*": {
+    "url": "http://host.docker.internal:8003",
+    "strip_prefix": "/assets/apps/vulnerability"
+  }
+}
+```
+
+This transforms:
+- `/assets/apps/vulnerability/fed-mods.json` → `/fed-mods.json`
+- `/assets/apps/vulnerability/js/runtime.js` → `/js/runtime.js`
 
 #### Using a locally running Chrome UI
 
@@ -121,6 +234,23 @@ podman run -d \
   -v "$(pwd)/config:/config:ro,Z" \
   quay.io/redhat-user-workloads/hcc-platex-services-tenant/frontend-development-proxy:latest
 ```
+#### IOP mode contract
+
+- Env var name: `IOP`
+- Type: boolean conveyed as string
+- Enabled only when: `IOP=true` (exact match)
+- Default: disabled (unset/any other value)
+
+#### ⚠️ Security Warning: IOP Mode TLS Verification
+
+**IOP mode disables TLS certificate verification (`tls_insecure_skip_verify`)** when proxying to the upstream IOP instance. This means:
+- **Man-in-the-middle attacks are possible** — an attacker on your network could intercept traffic
+- **Certificate errors are silently ignored** — expired, self-signed, or invalid certificates will be accepted
+- **DO NOT use this mode on untrusted networks** (public WiFi, shared networks, etc.)
+
+**Why this is necessary**: IOP instances often use self-signed certificates or internal CAs not trusted by the system store, making strict TLS verification impractical for local development.
+
+**For production-like security**: Configure your system to trust the IOP instance's CA certificate instead of using this mode. See your IOP administrator for the CA certificate bundle.
 
 ## DinD (docker-in-docker CI)
 
