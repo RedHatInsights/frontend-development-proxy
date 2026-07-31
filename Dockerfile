@@ -6,7 +6,7 @@ COPY rh_identity_transform .
 RUN xcaddy build \
   --with github.com/caddyserver/cache-handler \
   --with github.com/caddyserver/transform-encoder \
-  --with rh_identity_transform=$(pwd)
+  --with github.com/RedHatInsights/frontend-development-proxy/rh_identity_transform=$(pwd)
 
 FROM caddy:2.11.2
 

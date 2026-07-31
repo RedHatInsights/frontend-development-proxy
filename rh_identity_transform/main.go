@@ -37,7 +37,7 @@ func (rht *RhIdentityTransform) Validate() error {
 func (rht RhIdentityTransform) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.Handler) error {
 	tokenStr, ok := ExtractToken(r)
 	if !ok {
-		next.ServeHTTP(w, r)
+		return next.ServeHTTP(w, r)
 	}
 
 	token, _ := jwt.Parse(tokenStr, nil)
