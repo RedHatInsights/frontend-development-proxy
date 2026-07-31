@@ -1,4 +1,4 @@
-module rh_identity_transform
+module github.com/RedHatInsights/frontend-development-proxy/rh_identity_transform
 
 go 1.25.0
 
