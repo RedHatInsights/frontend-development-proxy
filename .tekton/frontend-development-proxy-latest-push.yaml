@@ -30,7 +30,7 @@ spec:
       - name: url
         value: https://github.com/RedHatInsights/konflux-pipelines
       - name: revision
-        value: main
+        value: b0d5add618e7c29bdd8be70bb6b84da4571f8b48 # main
       - name: pathInRepo
         value: pipelines/docker-build-oci-ta.yaml
     resolver: git
