@@ -52,23 +52,61 @@ IOP serves assets from `/assets/apps/` but webpack builds to `/dist/apps/`. Crea
 mkdir -p dist/assets && ln -s ../apps dist/assets/apps
 ```
 
-**2. Update `fec.config.js` in your app:**
+**2. Create module federation patch for IOP (if needed):**
+
+IOP/Foreman hosts provide `react` in the module federation shared scope but not `react/jsx-runtime` or `react-intl`. If your app uses these, create `config/patchFederationForIop.js`:
 
 ```javascript
+/* eslint-disable no-undef */
+/**
+ * Foreman/IOP hosts provide react in the module federation shared scope but not
+ * react/jsx-runtime or react-intl. FEC defaults mark these as chromeProvided with
+ * import: false, so the remote fails with:
+ *   Shared module react/jsx-runtime doesn't exist in shared scope default
+ *   (0 , react_intl__WEBPACK_IMPORTED_MODULE_0__.createIntlCache) is not a function
+ *
+ * Remove these from chromeProvided so webpack bundles them in the remote.
+ */
+const federatedModulesPath = require.resolve(
+    '@redhat-cloud-services/frontend-components-config-utilities/federated-modules'
+);
+const federatedModulesUtil = require(federatedModulesPath);
+const originalCreateIncludes = federatedModulesUtil.createIncludes;
+
+federatedModulesUtil.createIncludes = (...args) => {
+    const includes = originalCreateIncludes(...args);
+    if (includes.chromeProvided) {
+        delete includes.chromeProvided['react/jsx-runtime'];
+        delete includes.chromeProvided['react-intl'];
+    }
+    return includes;
+};
+```
+
+**3. Update `fec.config.js` in your app:**
+
+```javascript
+const { resolve } = require('path');
+
+// Conditionally apply IOP federation patch
+if (process.env.IOP === 'true') {
+  require('./config/patchFederationForIop');
+}
+
 module.exports = {
   // ... other config
   ...(process.env.IOP === 'true' ? { deployment: 'assets/apps' } : { publicPath: 'auto' }),
+  SPAFallback: process.env.IOP !== 'true',  // Disable chrome loading in IOP mode
   // ... rest of config
 }
 ```
 
-**3. Create `custom_routes.json` in your app root:**
+**4. Create `custom_routes.json` in your app root:**
 
 ```jsonc
 {
   "/assets/apps/your-app/*": {
-    "url": "http://host.docker.internal:8003",
-    "strip_prefix": "/assets/apps/your-app"
+    "url": "http://host.docker.internal:8003"
   },
   "/api/your-app/*": {
     "url": "http://host.docker.internal:8000"
@@ -76,7 +114,9 @@ module.exports = {
 }
 ```
 
-**4. Add script to your `package.json`:**
+**Note:** Port should match your webpack dev server port. The symlink from step 1 eliminates the need for `strip_prefix`.
+
+**5. Add script to your `package.json`:**
 
 ```json
 {
@@ -86,7 +126,7 @@ module.exports = {
 }
 ```
 
-**5. Run:**
+**6. Run:**
 
 ```bash
 export IOP_URL=https://your-iop-instance.example.com
@@ -109,6 +149,7 @@ podman build -t localhost/frontend-development-proxy:local .
 
 ```bash
 export FEC_DEV_PROXY_IMAGE=localhost/frontend-development-proxy:local
+export IOP_URL=https://your-iop-instance.example.com
 npm run start:proxy:iop
 ```
 
@@ -164,25 +205,6 @@ Example:
   "/api/NAME-OF-YOUR-APP/*": { "url": "http://host.docker.internal:8000" },
 }
 ```
-
-#### Path prefix stripping
-
-For IOP development where the production URL path differs from your local dev server's path, use `strip_prefix`:
-
-```jsonc
-{
-  // IOP production path: /assets/apps/vulnerability/fed-mods.json
-  // Local dev server serves from root: /fed-mods.json
-  "/assets/apps/vulnerability/*": {
-    "url": "http://host.docker.internal:8003",
-    "strip_prefix": "/assets/apps/vulnerability"
-  }
-}
-```
-
-This transforms:
-- `/assets/apps/vulnerability/fed-mods.json` → `/fed-mods.json`
-- `/assets/apps/vulnerability/js/runtime.js` → `/js/runtime.js`
 
 #### Using a locally running Chrome UI
 
