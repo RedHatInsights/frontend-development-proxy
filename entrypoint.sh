@@ -130,4 +130,24 @@ if [ -w /etc/resolv.conf ] 2>/dev/null; then
   fi
 fi
 
+# Default catch-all upstream:
+# - https:// (IoP/stage): skip TLS verify and set Host to the upstream (virtual hosts).
+# - http:// (local Foreman): no TLS transport (Caddy 2.11 rejects http:// + tls_*);
+#   do not rewrite Host so Rails sees iop.foo.redhat.com, not host.docker.internal.
+mkdir -p /etc/caddy/snippets
+if [[ "${HCC_ENV_URL:-}" == https://* ]]; then
+	log_msg ">>> Upstream TLS: skip-verify + Host rewrite (HCC_ENV_URL is https)"
+	cat >/etc/caddy/snippets/upstream-tls.caddy <<'EOF'
+				header_up Host {http.reverse_proxy.upstream.hostport}
+				transport http {
+					tls_insecure_skip_verify
+				}
+EOF
+else
+	log_msg ">>> Upstream TLS/Host rewrite: omitted (HCC_ENV_URL is not https)"
+	cat >/etc/caddy/snippets/upstream-tls.caddy <<'EOF'
+				lb_policy first
+EOF
+fi
+
 LOCAL_ROUTES=$output /usr/bin/caddy run --config "$CADDY_CONFIG_PATH"
