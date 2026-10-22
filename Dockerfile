@@ -1,5 +1,5 @@
 # Build customized Caddy binary with cache, transform-encoder and a custom 'rh_identity_transform' plugin.
-FROM caddy:2.11.2-builder AS builder
+FROM caddy:2.11.4-builder AS builder
 
 COPY rh_identity_transform .
 
@@ -8,7 +8,7 @@ RUN xcaddy build \
   --with github.com/caddyserver/transform-encoder \
   --with github.com/RedHatInsights/frontend-development-proxy/rh_identity_transform=$(pwd)
 
-FROM caddy:2.11.2
+FROM caddy:2.11.4
 
 COPY --from=builder /usr/bin/caddy /usr/bin/caddy
 
@@ -18,12 +18,13 @@ RUN apk add --no-cache nss-tools
 RUN apk add --no-cache tini
 
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+COPY configure-upstream.sh /usr/local/bin/configure-upstream.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
 # Run tests during build — fails the build (and CI) if tests break
 COPY tests/ /tmp/tests/
 COPY entrypoint.sh /tmp/entrypoint.sh
-RUN bash /tmp/tests/test_logging.sh && rm -rf /tmp/tests/ /tmp/entrypoint.sh
+RUN bash /tmp/tests/test_logging.sh && bash /tmp/tests/test_iop_upstream.sh && rm -rf /tmp/tests/ /tmp/entrypoint.sh
 
 COPY Caddyfile /etc/caddy/Caddyfile
 

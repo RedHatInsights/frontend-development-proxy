@@ -1,0 +1,4 @@
+{
+  "/assets/apps/compliance/*": { "url": "http://host.docker.internal:8003" },
+  "/assets/apps/inventory/*": { "url": "http://host.docker.internal:8004" }
+}

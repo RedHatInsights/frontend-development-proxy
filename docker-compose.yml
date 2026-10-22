@@ -1,0 +1,20 @@
+version: "3"
+
+services:
+  proxy-iop:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - 1337:1337
+    environment:
+      HCC_ENV: iop
+      PROXY_PORT: 1337
+      HCC_ENV_URL: "https://ip-10-0-198-87.rhos-01.prod.psi.rdu2.redhat.com"
+      # HCC_ENV_URL: "http://host.docker.internal:3000"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:Z
+      - ./config/routes.json:/config/routes.json:Z
+      - ./config/custom_routes.json:/config/custom_routes.json:Z
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

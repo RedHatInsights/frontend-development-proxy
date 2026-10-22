@@ -25,13 +25,10 @@
 	handle /api/* {
 		handle @iop {
 			reverse_proxy {$HCC_ENV_URL} {
-				header_up Host {http.reverse_proxy.upstream.hostport}
 				header_up Accept-Encoding "gzip;q=0,deflate,sdch"
 				header_up -Origin
 				header_down Location {http.reverse_proxy.upstream.host} {http.request.hostport}
-				transport http {
-					tls_insecure_skip_verify
-				}
+				import /etc/caddy/snippets/upstream-tls.caddy
 			}
 		}
 		handle {
@@ -47,13 +44,10 @@
 		cache
 		handle @iop {
 			reverse_proxy {$HCC_ENV_URL} {
-				header_up Host {http.reverse_proxy.upstream.hostport}
 				header_up Accept-Encoding "gzip;q=0,deflate,sdch"
 				header_up -Origin
 				header_down Location {http.reverse_proxy.upstream.host} {http.request.hostport}
-				transport http {
-					tls_insecure_skip_verify
-				}
+				import /etc/caddy/snippets/upstream-tls.caddy
 			}
 		}
 		handle {

@@ -130,4 +130,10 @@ if [ -w /etc/resolv.conf ] 2>/dev/null; then
   fi
 fi
 
-LOCAL_ROUTES=$output /usr/bin/caddy run --config "$CADDY_CONFIG_PATH"
+# HTTP Foreman must keep the browser Host and must not enable TLS transport.
+# HTTPS upstreams need their virtual host and may use a development certificate.
+mkdir -p /etc/caddy/snippets
+source "$(dirname "${BASH_SOURCE[0]}")/configure-upstream.sh"
+write_upstream_config "${HCC_ENV_URL:-}" /etc/caddy/snippets/upstream-tls.caddy
+
+exec env LOCAL_ROUTES="$output" /usr/bin/caddy run --config "$CADDY_CONFIG_PATH"
